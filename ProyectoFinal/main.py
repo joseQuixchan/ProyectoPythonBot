@@ -5,15 +5,15 @@ from telebot.types import ReplyKeyboardMarkup
 from telebot.types import ForceReply 
 from constantes import * #Importacion de la clse que contiene el token
 import telebot #Libreria para la API de telegram
-import clima as C
+
 
 bot = telebot.TeleBot(API_KEY) #Instanciamos el bot de telegram con el token respectivo
 
 print("¡El bot ha inicado con exito!") #Indiqca que el bot esta corriendo
-datos = [] #Declaramos la lista donde se almacenara los datos del usuairo
+
 
 @bot.message_handler(commands=["start", "Start"]) #Declaracion para el comando start
-def start_command(message): #Recive como argumento el mensaje start "el argumento message es un Json con informacion del usuario"
+def start_command(message): #Recibe como argumento el mensaje start "el argumento message es un Json con informacion del usuario"
     bot.reply_to(message, "¡Hola! \npuedes utilizar los siguientes comandos /Bitacora y /Weather, si necesitas ayuda puedes usar /help.") #Cita el mensaje enviado y responde un texto
 
 @bot.message_handler(commands=["help", "Help"]) #Declaracion para el comando help
@@ -43,42 +43,48 @@ def saber_clima(message): #Funcion para el clima
 
 @bot.message_handler(commands=["Bitacora","bitacora", "Bitácora","bitácora"])
 def bitacora_command(message):
+    datos = []  # Declaramos la lista donde se almacenara los datos del usuario
     markup = ForceReply()
     msg = bot.send_message(message.chat.id, "Bienvenido a la Bitácora\n¿Cuál es tu nombre?", reply_markup=markup) #guardamos la respuesta a la pregunta en una variable
-    bot.register_next_step_handler(msg, edad)#mandamos la respuesta junto con otra funcion
+    bot.register_next_step_handler(msg, edad, datos)#mandamos la respuesta junto con otra funcion
    
-def edad(message):
+def edad(message, datos):
     datos.append(message.text) #almacenamos en una lista la posicion text del Json del mensaje de la respuesta anterior
     markup = ForceReply()
     msg = bot.send_message(message.chat.id, "¿Cuál es tu edad? (ingrese solo el número)", reply_markup=markup)
-    bot.register_next_step_handler(msg, sentir)
+    bot.register_next_step_handler(msg, sentir, datos)
     
 
-def sentir(message):
-    datos.append(message.text)
+def sentir(message, datos):
     markup = ForceReply()
-    msg = bot.send_message(message.chat.id, "¿Como te sientes hoy?", reply_markup=markup)
-    bot.register_next_step_handler(msg, mejorar)
+    if message.text.isdigit():
+        datos.append(message.text)
+        msg = bot.send_message(message.chat.id, "¿Como te sientes hoy?", reply_markup=markup)
+        bot.register_next_step_handler(msg, mejorar, datos)
+    else:
+        msg = bot.send_message(message.chat.id, "Debes ingresar solo números\nVuelva a intentarlo"
+                               , reply_markup=markup)
+        bot.register_next_step_handler(msg, sentir, datos)
  
-def mejorar(message):
+def mejorar(message, datos):
     datos.append(message.text)
     markup = ForceReply()
     msg = bot.send_message(message.chat.id, "¿Que mejorarias en tu vida?", reply_markup=markup)
-    bot.register_next_step_handler(msg, metas)
+    bot.register_next_step_handler(msg, metas, datos)
 
 
-def metas(message):
+def metas(message, datos):
     datos.append(message.text)
     markup = ForceReply()
     msg = bot.send_message(message.chat.id, "¿Que metas tienes para hoy?", reply_markup=markup)
-    bot.register_next_step_handler(msg, agradecimiento)
+    bot.register_next_step_handler(msg, agradecimiento, datos)
 
 
-def agradecimiento(message):
+def agradecimiento(message,datos):
     datos.append(message.text) #se almacena todos los datos de las respuesta a las pregutnas
     bot.send_message(message.chat.id, "Nombre del usuario: " + datos[0] + "\n" + "Edad: " + datos[1] + "\n" + "Sentimiento: " + datos[2] + "\n" + "Mejorar en vida: " + datos[3] + "\n" + "Metas: " + datos[4])#Responde al usariio un resumen de los datos ingresados
     print(datos)
-    datos.clear() #limpia la lista a vacia
+    # datos.clear() #limpia la lista a vacia
 
 @bot.message_handler(content_types=["text"]) #Controlador de palabras no conocidad y comando no conocidos
 def respuestas_simples(message):
