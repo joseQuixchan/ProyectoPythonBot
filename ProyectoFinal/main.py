@@ -1,20 +1,19 @@
-from cgitb import text
-from unicodedata import name
+
+from googletrans import Translator # Importación de la librería googletrans con pip install googletrans==4.0.0-rc1
+from telebot import types
 import requests
-from telebot.types import ReplyKeyboardMarkup
 from telebot.types import ForceReply 
 from constantes import * #Importacion de la clse que contiene el token
 import telebot #Libreria para la API de telegram
 
 
 bot = telebot.TeleBot(API_KEY) #Instanciamos el bot de telegram con el token respectivo
-
+translator = Translator() #Se instancia el objeto Translator
 print("¡El bot ha inicado con exito!") #Indiqca que el bot esta corriendo
-
 
 @bot.message_handler(commands=["start", "Start"]) #Declaracion para el comando start
 def start_command(message): #Recibe como argumento el mensaje start "el argumento message es un Json con informacion del usuario"
-    bot.reply_to(message, "¡Hola! \npuedes utilizar los siguientes comandos /Bitacora y /Weather, si necesitas ayuda puedes usar /help.") #Cita el mensaje enviado y responde un texto
+    bot.reply_to(message, "¡Hola! \npuedes utilizar los siguientes comandos: \n/Bitacora y /Weather, si necesitas ayuda puedes usar /help.") #Cita el mensaje enviado y responde un texto
 
 @bot.message_handler(commands=["help", "Help"]) #Declaracion para el comando help
 def help_command(message):
@@ -25,28 +24,37 @@ def help_command(message):
 
 @bot.message_handler(commands=["weather", "Weather"]) #Responde al comando weather
 def weather_command(message):
-    markup = ForceReply()
-    msg = bot.send_message(message.chat.id, "¿Nombre de tu ciudad?", reply_markup=markup) #almacenamos en una baritable lo que le usuario responda a la pregunta
-    bot.register_next_step_handler(msg, saber_clima) #regista la respuesta y manda la respuesta a otra funcion
-   
-def saber_clima(message): #Funcion para el clima   
-    ciudad = message.text #Sacamos el mensaje del Json messaje para optener la ciudad
-    response = requests.get("http://api.weatherapi.com/v1/current.json?key=51df2be0422945f4bb831625222506&q="+ ciudad + "&aqi=no") #instanciamos la api del clima al cual le pasamos la ciudad ingresada
-    print(response)
-    respuesta = response.json() #Recivimos un Json de la api del clima
-    city = respuesta['location']['name'] #Almacenamos los datos necesario
-    pais = respuesta['location']['country']
-    temperatura = respuesta['current']['temp_c']
-    entorno = respuesta['current']['condition']['text']
-    icon = respuesta['current']['condition']['icon']
-    bot.reply_to(message, "Ciudad: "+str(city)+", Pais: "+str(pais)+", Temp: "+str(temperatura)+"Cº,  Entorno: "+str(entorno)+ "\n"+str(icon)) #El bot contesta los datos selecionados
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True) # Se crea un nuevo teclado
+        button_geo = types.KeyboardButton(text="Enviar ubicación", request_location=True) # Se crea un botón
+        keyboard.add(button_geo)  # Se agrega el botón al teclado
+        msg = bot.send_message(message.chat.id, "Necesitamos saber tu ubicación para brindarte información sobre el clima", reply_markup=keyboard)
+        bot.register_next_step_handler(msg, saber_clima)  # regista la respuesta y manda la respuesta a otra funcion
+def saber_clima(message): #Funcion para el clima
+    if message.location is not None: # Se valida que el usuario envíe la ubicación
+        longitud = message.location.longitude #Sacamos el mensaje del Json messaje para optener la longitud
+        latitud = message.location.latitude #Sacamos el mensaje del Json messaje para optener la latitud
+        posicion=  str(latitud)+","+str(longitud)
+        response = requests.get("http://api.weatherapi.com/v1/current.json?key=51df2be0422945f4bb831625222506&q="+ posicion+ "&aqi=no") #instanciamos la api del clima al cual le pasamos la ciudad ingresada
+        print(response)
+        respuesta = response.json() # Recibimos un Json de la api del clima
+        # Almacenamos los datos necesario
+        city = respuesta['location']['name']
+        pais = respuesta['location']['country']
+        temperatura = respuesta['current']['temp_c']
+        entorno = respuesta['current']['condition']['text']
+        entornoT= translator.translate(": "+str(entorno), dest='es').text #Se traduce el valor de la variable entorno
+        icon = respuesta['current']['condition']['icon']
+        bot.reply_to(message, "Ciudad: "+str(city)+"\nPais: "+str(pais)+"\nTemperatura: "+str(temperatura)+"Cº\nEntorno"+ str(entornoT) + "\n"+str(icon)) #El bot contesta los datos selecionados
+    else:
+        msg = bot.send_message(message.chat.id, "Debes enviar una ubicación")
+        bot.register_next_step_handler(msg, saber_clima)
 
 @bot.message_handler(commands=["Bitacora","bitacora", "Bitácora","bitácora"])
 def bitacora_command(message):
     datos = []  # Declaramos la lista donde se almacenara los datos del usuario
     markup = ForceReply()
     msg = bot.send_message(message.chat.id, "Bienvenido a la Bitácora\n¿Cuál es tu nombre?", reply_markup=markup) #guardamos la respuesta a la pregunta en una variable
-    bot.register_next_step_handler(msg, edad, datos)#mandamos la respuesta junto con otra funcion
+    bot.register_next_step_handler(msg, edad, datos) # mandamos la respuesta junto con otra funcion
    
 def edad(message, datos):
     datos.append(message.text) #almacenamos en una lista la posicion text del Json del mensaje de la respuesta anterior
@@ -101,5 +109,7 @@ def respuestas_simples(message):
 
 
 bot.infinity_polling() #Bucle que deja escuchando al bot infinitamente
+
+
 
 
