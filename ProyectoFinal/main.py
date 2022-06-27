@@ -3,7 +3,7 @@ from googletrans import Translator # Importación de la librería googletrans co
 from telebot import types
 import requests
 from telebot.types import ForceReply
-from constantes import * #Importacion de la clse que contiene el token
+from constantes import * #Importacion de la clase que contiene el token
 import telebot #Libreria para la API de telegram
 
 
@@ -13,7 +13,8 @@ print("¡El bot ha inicado con exito!") #Indiqca que el bot esta corriendo
 
 @bot.message_handler(commands=["start", "Start"]) #Declaracion para el comando start
 def start_command(message): #Recibe como argumento el mensaje start "el argumento message es un Json con informacion del usuario"
-    bot.reply_to(message, "¡Hola! \npuedes utilizar los siguientes comandos: \n/Bitacora y /Weather, si necesitas ayuda puedes usar /help.") #Cita el mensaje enviado y responde un texto
+    user = message.from_user.first_name
+    bot.reply_to(message, "¡Hola " + user + "!" "\npuedes utilizar los siguientes comandos: \n/Bitacora y /Weather, si necesitas ayuda puedes usar /help.") #Cita el mensaje enviado y responde un texto
 
 @bot.message_handler(commands=["help", "Help"]) #Declaracion para el comando help
 def help_command(message):
@@ -67,7 +68,7 @@ def sentir(message, datos):
     markup = ForceReply()
     if message.text.isdigit():
         datos.append(message.text)
-        msg = bot.send_message(message.chat.id, "¿Como te sientes hoy?", reply_markup=markup)
+        msg = bot.send_message(message.chat.id, "¿Cómo te sientes hoy?", reply_markup=markup)
         bot.register_next_step_handler(msg, mejorar, datos)
     else:
         msg = bot.send_message(message.chat.id, "Debes ingresar solo números\nVuelva a intentarlo"
@@ -77,14 +78,14 @@ def sentir(message, datos):
 def mejorar(message, datos):
     datos.append(message.text)
     markup = ForceReply()
-    msg = bot.send_message(message.chat.id, "¿Que mejorarás hoy en tu vida?", reply_markup=markup)
+    msg = bot.send_message(message.chat.id, "¿Qué mejorarás hoy en tu vida?", reply_markup=markup)
     bot.register_next_step_handler(msg, metas, datos)
 
 
 def metas(message, datos):
     datos.append(message.text)
     markup = ForceReply()
-    msg = bot.send_message(message.chat.id, "¿Que metas tienes para hoy?", reply_markup=markup)
+    msg = bot.send_message(message.chat.id, "¿Qué metas tienes para hoy?", reply_markup=markup)
     bot.register_next_step_handler(msg, agradecimiento, datos)
 
 
@@ -94,7 +95,7 @@ def agradecimiento(message,datos):
     print(datos)
 
 
-@bot.message_handler(content_types=["text"]) #Controlador de palabras no conocidad y comando no conocidos
+@bot.message_handler(content_types=["text"]) #Controlador de palabras no conocidas y comandos no conocidos
 def respuestas_simples(message):
     mensaje=message.text.lower()
     if mensaje.startswith("/"):
@@ -104,10 +105,20 @@ def respuestas_simples(message):
     elif mensaje == "weather":
         weather_command(message)
     else:
-        bot.send_message(message.chat.id, "Hola, Soy Climatobot\n Utiliza el comando /help si necesitas ayuda")
+        bot.send_message(message.chat.id, "Ups! No puedo entenderte" + "\n Utiliza el comando /help si necesitas ayuda")
+ 
 
+@bot.message_handler(content_types=["photo", "png"]) #Controlador de palabras no conocidas y comandos no conocidos
+def respuestas_simples(message):
+        bot.send_message(message.chat.id, "Las imagenes no son validas" + "\n Prueba con /help si necesitas ayuda")
+        print(message.photo)
 
-
+bot.set_my_commands([
+    telebot.types.BotCommand("start", "Da la bienvenida al bot"),
+    telebot.types.BotCommand("help", "Mensaje de ayuda al usuario"),
+    telebot.types.BotCommand("weather", "Clima de ubicacion del usuairo"),
+    telebot.types.BotCommand("bitacora", "Comienza un cuestionario")
+])
 bot.infinity_polling() #Bucle que deja escuchando al bot infinitamente
 
 
