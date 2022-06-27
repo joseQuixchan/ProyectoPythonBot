@@ -45,7 +45,8 @@ def saber_clima(message): #Funcion para el clima
         entorno = respuesta['current']['condition']['text']
         entornoT= translator.translate(": "+str(entorno), dest='es').text #Se traduce el valor de la variable entorno
         icon = respuesta['current']['condition']['icon']
-        bot.reply_to(message, "Ciudad: "+str(city)+"\nPais: "+str(pais)+"\nTemperatura: "+str(temperatura)+"Cº\nEntorno"+ str(entornoT) + "\n"+str(icon)) #El bot contesta los datos selecionados
+        bot.reply_to(message, "Ciudad: "+str(city)+"\nPais: "+str(pais)+"\nTemperatura: "+str(temperatura)+"Cº\nEntorno"+ str(entornoT) + "\n"+str(icon) + "\n----------------------/help - /start") #El bot contesta los datos selecionados
+        print(icon)
     else:
         msg = bot.send_message(message.chat.id, "Debes enviar una ubicación")
         bot.register_next_step_handler(msg, saber_clima)
@@ -91,7 +92,8 @@ def metas(message, datos):
 
 def agradecimiento(message,datos):
     datos.append(message.text) #se almacena todos los datos de las respuesta a las preguntas
-    bot.send_message(message.chat.id, "Nombre del usuario: " + datos[0] + "\nEdad: " + datos[1] + "\nSe siente: " + datos[2] + "\nCosas que mejorará hoy: " + datos[3] + "\nMetas: " + datos[4])#Responde al usariio un resumen de los datos ingresados
+    bot.send_message(message.chat.id, "Nombre del usuario: " + datos[0] + "\nEdad: " + datos[1] + "\nSe siente: " + datos[2] + "\nCosas que mejorará hoy: " + datos[3] + "\nMetas: " + datos[4]
+    + "\n/bitacora - /weather - /start")#Responde al usariio un resumen de los datos ingresados
     print(datos)
 
 
@@ -104,13 +106,15 @@ def respuestas_simples(message):
         bitacora_command(message)
     elif mensaje == "weather":
         weather_command(message)
+    elif message == "hola":
+        bot.send_message(message.chat.id, "¡Hola!, ¿Cómo estas? \n/help" )
     else:
-        bot.send_message(message.chat.id, "Ups! No puedo entenderte" + "\n Utiliza el comando /help si necesitas ayuda")
+        bot.send_message(message.chat.id, "Ups! No puedo entenderte" + "\nUtiliza el comando /help si necesitas ayuda")
  
 
 @bot.message_handler(content_types=["photo", "png"]) #Controlador de palabras no conocidas y comandos no conocidos
 def respuestas_simples(message):
-        bot.send_message(message.chat.id, "Las imagenes no son validas" + "\n Prueba con /help si necesitas ayuda")
+        bot.send_message(message.chat.id, "Las imagenes no son validas" + "\nPrueba con /help si necesitas ayuda")
         print(message.photo)
 
 bot.set_my_commands([
